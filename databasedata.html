@@ -3,526 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Dashboard</title>
+    <title>Energy Dashboard</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 </head>
 <body>
     <div class="dashboard-container">
         <div class="dashboard-header">
-            <h2>Dashboard</h2>
+            <h2>Energy Data Dashboard</h2>
             <div class="user-info">
-                <!-- <img src="/api/placeholder/40/40" alt="User Profile"> -->
                 <span id="username">Username</span>
+            </div>
+            <div class="facility-selector">
+                <a href="facility.html" class="facility-btn active">Facility</a>
+                <a href="fieten.html" class="facility-btn">Fieten</a>
             </div>
             <button class="logout-btn" onclick="location.href='login.html'">Logout</button>
         </div>
         
         <div class="dashboard-content">
-            <div class="filter-container">
-                <label for="dateFilter">Filter by Date:</label>
-                <select id="dateFilter" onchange="filterByDate()">
-                    <option value="all">All Dates</option>
-                    <!-- Dates will be filled dynamically -->
-                </select>
-            </div>
-            
-            <div class="graph-container">
-                <div class="chart-select">
-                    <label for="chartType">Select Chart:</label>
-                    <select id="chartType" onchange="toggleChart()">
-                        <option value="hourly">Hourly Energy Capacity</option>
-                        <option value="daily">Daily Average Capacity</option>
-                    </select>
+            <!-- Table Selection Menu -->
+            <div class="menu-container">
+                <div class="menu-section">
+                    <h3>Data Tables</h3>
+                    <div class="table-menu" id="tableMenu">
+                        <!-- Tables will be dynamically populated here -->
+                    </div>
                 </div>
-            
-                <div class="chart-box" id="hourlyChartBox" style="display: none;">
-                    <h3>Hourly Energy Capacity</h3>
-                    <canvas id="hourlyChart"></canvas>
-                </div> 
                 
-                <div class="chart-box" id="dailyChartBox" style="display: none;">
-                    <h3>Daily Average Capacity</h3>
-                    <canvas id="dailyChart"></canvas>
+                <div class="menu-section">
+                    <h3>View Options</h3>
+                    <div class="view-options">
+                        <button class="view-btn active" data-view="15min">15-Min Intervals</button>
+                        <button class="view-btn" data-view="daily">Daily Data</button>
+                        <button class="view-btn" data-view="average">Average By Date</button>
+                    </div>
                 </div>
             </div>
             
-            
-            <div class="table-info">
-                <h3>Facility Data</h3>
-            </div>
-            
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Search...">
-                <button onclick="searchData()">Search</button>
-            </div>
-            
-            <div class="table-container">
-                <table class="data-table" id="dataTable">
-                    <thead id="tableHeader">
-                        <!-- Column headers will be dynamically generated -->
-                    </thead>
-                    <tbody id="tableBody">
-                        <!-- Data will be dynamically loaded -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="pagination" id="pagination">
-                <!-- Pagination will be dynamically generated -->
+            <div class="main-content">
+                <div class="filter-container">
+                    <div class="date-filter">
+                        <label for="dateFilter">Filter by Date:</label>
+                        <select id="dateFilter" onchange="filterByDate()">
+                            <option value="all">All Dates</option>
+                            <!-- Dates will be filled dynamically -->
+                        </select>
+                    </div>
+                    
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="Search...">
+                        <button onclick="searchData()">Search</button>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 id="currentChartTitle">Energy Data</h3>
+                    </div>
+                    <div class="chart-box" id="chartBox">
+                        <canvas id="dataChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <h3 id="currentTableName">Facility Data</h3>
+                    <table class="data-table" id="dataTable">
+                        <thead id="tableHeader">
+                            <!-- Column headers will be dynamically generated -->
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Data will be dynamically loaded -->
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="pagination">
+                        <!-- Pagination will be dynamically generated -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    
-
     <!-- Include the data file generated by Python -->
     <script src="data.js"></script>
-    
-    <script>
-        // Global variables
-        let facilityData = [];
-        let charts = {};
-        let currentPage = 1;
-        const rowsPerPage = 10;
-        
-        // Load data when page loads
-        window.onload = function() {
-            // Check if tableData exists
-            if (typeof tableData === 'undefined') {
-                console.error("Error: tableData is not defined. Make sure data.js is loaded correctly.");
-                return;
-            }
-            
-            // Set username
-            document.getElementById('username').textContent = tableData.username;
-            
-            // Process facility data
-            if (tableData.allTablesData && tableData.allTablesData.facility) {
-                const data = tableData.allTablesData.facility;
-                
-                // Set column headers
-                generateTableHeaders(data.columns);
-                
-                // Process rows data
-                facilityData = processData(data.rows);
-                
-                // Populate date filter
-                populateDateFilter(facilityData);
-                
-                // Load table data with pagination
-                loadTableData(facilityData);
-                
-                // Generate pagination
-                generatePagination(Math.ceil(facilityData.length / rowsPerPage));
-                
-                // Create charts
-                createHourlyChart(facilityData);
-                createDailyChart(facilityData);
-                toggleChart();
-
-            } else {
-                console.error("Facility data not found in tableData");
-            }
-        };
-        
-        // Process raw data into structured format
-        function processData(rows) {
-            return rows.map(row => {
-                return {
-                    id: row[0],
-                    party_id: row[1],
-                    time: row[2],
-                    date: row[3],
-                    available_capacity: parseFloat(row[4])
-                };
-            });
-        }
-        
-        // Populate date filter dropdown
-        function populateDateFilter(data) {
-            const dateFilter = document.getElementById('dateFilter');
-            const dates = [...new Set(data.map(item => item.date))].sort();
-            
-            dates.forEach(date => {
-                const option = document.createElement('option');
-                option.value = date;
-                option.textContent = date;
-                dateFilter.appendChild(option);
-            });
-        }
-        
-        // Create hourly chart
-        function createHourlyChart(data) {
-            // Sort data by time
-            const sortedData = [...data].sort((a, b) => {
-                // Convert time strings to comparable values
-                const timeToMinutes = (timeStr) => {
-                    const [hours, minutes] = timeStr.split(':').map(Number);
-                    return hours * 60 + minutes;
-                };
-                return timeToMinutes(a.time) - timeToMinutes(b.time);
-            });
-            
-            // Group by hour for cleaner display
-            const hourlyData = {};
-            sortedData.forEach(item => {
-                const hour = item.time.split(':')[0];
-                if (!hourlyData[hour]) {
-                    hourlyData[hour] = [];
-                }
-                hourlyData[hour].push(item.available_capacity);
-            });
-            
-            // Calculate average for each hour
-            const hours = Object.keys(hourlyData).sort((a, b) => parseInt(a) - parseInt(b));
-            const avgCapacities = hours.map(hour => {
-                const values = hourlyData[hour];
-                return values.reduce((sum, val) => sum + val, 0) / values.length;
-            });
-            
-            // Format hours for display (add :00)
-            const hourLabels = hours.map(h => `${h}:00`);
-            
-            // Create chart
-            const ctx = document.getElementById('hourlyChart').getContext('2d');
-            charts.hourly = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: hourLabels,
-                    datasets: [{
-                        label: 'Average Capacity (MW)',
-                        data: avgCapacities,
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            title: {
-                                display: true,
-                                text: 'Capacity (MW)'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Hour of Day'
-                            }
-                        }
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Hourly Energy Capacity'
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Create daily chart
-        function createDailyChart(data) {
-            // Group by date
-            const dailyData = {};
-            data.forEach(item => {
-                if (!dailyData[item.date]) {
-                    dailyData[item.date] = [];
-                }
-                dailyData[item.date].push(item.available_capacity);
-            });
-            
-            // Calculate average for each date
-            const dates = Object.keys(dailyData).sort();
-            const avgCapacities = dates.map(date => {
-                const values = dailyData[date];
-                return values.reduce((sum, val) => sum + val, 0) / values.length;
-            });
-            
-            // Create chart
-            const ctx = document.getElementById('dailyChart').getContext('2d');
-            charts.daily = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: 'Average Capacity (MW)',
-                        data: avgCapacities,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            title: {
-                                display: true,
-                                text: 'Average Capacity (MW)'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Date'
-                            }
-                        }
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Daily Average Energy Capacity'
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Filter data by selected date
-        function filterByDate() {
-            const selectedDate = document.getElementById('dateFilter').value;
-            let filteredData = facilityData;
-            
-            if (selectedDate !== 'all') {
-                filteredData = facilityData.filter(item => item.date === selectedDate);
-            }
-            
-            // Reset to first page
-            currentPage = 1;
-            
-            // Update table with filtered data
-            loadTableData(filteredData);
-            
-            // Update pagination
-            generatePagination(Math.ceil(filteredData.length / rowsPerPage));
-            
-            // Update charts with filtered data
-            updateCharts(filteredData, selectedDate);
-        }
-        
-        // Update charts with filtered data
-        function updateCharts(data, dateFilter) {
-            if (data.length === 0) return;
-            
-            // Update hourly chart
-            if (charts.hourly) {
-                // Sort data by time
-                const sortedData = [...data].sort((a, b) => {
-                    const timeToMinutes = (timeStr) => {
-                        const [hours, minutes] = timeStr.split(':').map(Number);
-                        return hours * 60 + minutes;
-                    };
-                    return timeToMinutes(a.time) - timeToMinutes(b.time);
-                });
-                
-                // Group by hour
-                const hourlyData = {};
-                sortedData.forEach(item => {
-                    const hour = item.time.split(':')[0];
-                    if (!hourlyData[hour]) {
-                        hourlyData[hour] = [];
-                    }
-                    hourlyData[hour].push(item.available_capacity);
-                });
-                
-                // Calculate average for each hour
-                const hours = Object.keys(hourlyData).sort((a, b) => parseInt(a) - parseInt(b));
-                const avgCapacities = hours.map(hour => {
-                    const values = hourlyData[hour];
-                    return values.reduce((sum, val) => sum + val, 0) / values.length;
-                });
-                
-                // Format hours for display (add :00)
-                const hourLabels = hours.map(h => `${h}:00`);
-                
-                // Update chart
-                charts.hourly.data.labels = hourLabels;
-                charts.hourly.data.datasets[0].data = avgCapacities;
-                charts.hourly.options.plugins.title.text = dateFilter === 'all' ? 
-                    'Hourly Energy Capacity (All Dates)' : 
-                    `Hourly Energy Capacity (${dateFilter})`;
-                charts.hourly.update();
-            }
-            
-            // If filtering by a specific date, no need to update daily chart
-            if (dateFilter !== 'all') return;
-            
-            // Update daily chart if showing all dates
-            if (charts.daily) {
-                // Group by date
-                const dailyData = {};
-                data.forEach(item => {
-                    if (!dailyData[item.date]) {
-                        dailyData[item.date] = [];
-                    }
-                    dailyData[item.date].push(item.available_capacity);
-                });
-                
-                // Calculate average for each date
-                const dates = Object.keys(dailyData).sort();
-                const avgCapacities = dates.map(date => {
-                    const values = dailyData[date];
-                    return values.reduce((sum, val) => sum + val, 0) / values.length;
-                });
-                
-                // Update chart
-                charts.daily.data.labels = dates;
-                charts.daily.data.datasets[0].data = avgCapacities;
-                charts.daily.update();
-            }
-        }
-        
-        // Function to generate table headers
-        function generateTableHeaders(columns) {
-            const headerRow = document.getElementById('tableHeader');
-            headerRow.innerHTML = '';
-            
-            const row = document.createElement('tr');
-            
-            columns.forEach(column => {
-                const th = document.createElement('th');
-                th.textContent = column.charAt(0).toUpperCase() + column.slice(1).replace('_', ' ');
-                row.appendChild(th);
-            });
-            
-            headerRow.appendChild(row);
-        }
-        
-        // Function to load data into table with pagination
-        function loadTableData(data) {
-            const tableBody = document.getElementById('tableBody');
-            tableBody.innerHTML = '';
-            
-            const start = (currentPage - 1) * rowsPerPage;
-            const end = start + rowsPerPage;
-            const pageData = data.slice(start, end);
-            
-            if (pageData.length === 0) {
-                const tr = document.createElement('tr');
-                const td = document.createElement('td');
-                td.colSpan = 5; // Number of columns in facility table
-                td.textContent = "No data found";
-                td.style.textAlign = "center";
-                tr.appendChild(td);
-                tableBody.appendChild(tr);
-                return;
-            }
-            
-            pageData.forEach(item => {
-                const tr = document.createElement('tr');
-                
-                // Add all properties to table row
-                tr.innerHTML = `
-                    <td>${item.id}</td>
-                    <td>${item.party_id}</td>
-                    <td>${item.time}</td>
-                    <td>${item.date}</td>
-                    <td>${item.available_capacity}</td>
-                `;
-                
-                tableBody.appendChild(tr);
-            });
-        }
-        
-        // Function to generate pagination controls
-        function generatePagination(pageCount) {
-            const pagination = document.getElementById('pagination');
-            pagination.innerHTML = '';
-            
-            // Previous button
-            if (currentPage > 1) {
-                const prevButton = document.createElement('button');
-                prevButton.textContent = 'Previous';
-                prevButton.onclick = function() {
-                    currentPage--;
-                    filterByDate(); // This will refresh the table with the current filter
-                };
-                pagination.appendChild(prevButton);
-            }
-            
-            // Page numbers (limit to show 5 pages at a time)
-            const maxPages = 5;
-            let startPage = Math.max(1, currentPage - Math.floor(maxPages / 2));
-            let endPage = Math.min(pageCount, startPage + maxPages - 1);
-            
-            // Adjust start page if we're at the end
-            if (endPage - startPage + 1 < maxPages) {
-                startPage = Math.max(1, endPage - maxPages + 1);
-            }
-            
-            for (let i = startPage; i <= endPage; i++) {
-                const button = document.createElement('button');
-                button.textContent = i;
-                button.onclick = function() {
-                    currentPage = i;
-                    filterByDate(); // This will refresh the table with the current filter
-                };
-                
-                if (i === currentPage) {
-                    button.classList.add('active');
-                }
-                
-                pagination.appendChild(button);
-            }
-            
-            // Next button
-            if (currentPage < pageCount) {
-                const nextButton = document.createElement('button');
-                nextButton.textContent = 'Next';
-                nextButton.onclick = function() {
-                    currentPage++;
-                    filterByDate(); // This will refresh the table with the current filter
-                };
-                pagination.appendChild(nextButton);
-            }
-        }
-        
-        // Function to search data
-        function searchData() {
-            const searchInput = document.getElementById('searchInput').value.toLowerCase();
-            const dateFilter = document.getElementById('dateFilter').value;
-            
-            // First apply date filter
-            let filteredData = facilityData;
-            if (dateFilter !== 'all') {
-                filteredData = facilityData.filter(item => item.date === dateFilter);
-            }
-            
-            // Then apply search filter
-            if (searchInput) {
-                filteredData = filteredData.filter(item => {
-                    return Object.values(item).some(value => 
-                        String(value).toLowerCase().includes(searchInput)
-                    );
-                });
-            }
-            
-            // Reset to first page
-            currentPage = 1;
-            
-            // Update table with filtered data
-            loadTableData(filteredData);
-            
-            // Update pagination
-            generatePagination(Math.ceil(filteredData.length / rowsPerPage));
-        }
-        function toggleChart() {
-    const selected = document.getElementById('chartType').value;
-    document.getElementById('hourlyChartBox').style.display = (selected === 'hourly') ? 'block' : 'none';
-    document.getElementById('dailyChartBox').style.display = (selected === 'daily') ? 'block' : 'none';
-}
-
-       
-    </script>
+    <script src="js/dashboard.js"></script>
 </body>
 </html>
