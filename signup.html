@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Dashboard Signup</h2>
+            <p>Create your account</p>
+        </div>
+        
+        <div class="form-container">
+            <form id="signup-form" action="http://localhost:8000/signup" method="POST">
+                <h2>Create an Account</h2>
+                
+                <div class="form-group">
+                    <label for="signup-username">Username:</label>
+                    <input type="text" id="signup-username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-email">Email:</label>
+                    <input type="email" id="signup-email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-password">Password:</label>
+                    <input type="password" id="signup-password" name="password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-confirm">Confirm Password:</label>
+                    <input type="password" id="signup-confirm" name="confirm-password" required>
+                </div>
+                
+                <button type="submit" class="btn">Sign Up</button>
+                
+                <div class="form-switch">
+                    <p>Already have an account? <a href="login.html">Login</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Password confirmation validation
+        document.getElementById('signup-form').addEventListener('submit', function(event) {
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm').value;
+            
+            if (password !== confirmPassword) {
+                event.preventDefault();
+                alert('Passwords do not match!');
+            }
+        });
+    </script>
+</body>
+</html>

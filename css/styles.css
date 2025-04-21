@@ -1,0 +1,255 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    width: 400px;
+    overflow: hidden;
+}
+
+.header {
+    background-color: #3498db;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.header h2 {
+    margin-bottom: 10px;
+}
+
+.tab-control {
+    display: flex;
+}
+
+.tab-control button {
+    background-color: #f1f1f1;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 15px;
+    flex: 1;
+    font-size: 16px;
+    transition: 0.3s;
+}
+
+.tab-control button:hover {
+    background-color: #ddd;
+}
+
+.tab-control button.active {
+    background-color: white;
+    font-weight: bold;
+}
+
+.form-container {
+    padding: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.form-group input:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+.btn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 12px;
+    width: 100%;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    background-color: #2980b9;
+}
+
+.form-switch {
+    text-align: center;
+    margin-top: 20px;
+    color: #666;
+}
+
+.form-switch a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.form-switch a:hover {
+    text-decoration: underline;
+}
+
+
+
+/* Dashboard Styles */
+.dashboard-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.dashboard-header {
+    background-color: #3498db;
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.user-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    background-color: white;
+}
+
+.logout-btn {
+    background-color: white;
+    color: #3498db;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.logout-btn:hover {
+    background-color: #f1f1f1;
+}
+
+.dashboard-content {
+    padding: 20px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.data-table th, .data-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+.data-table th {
+    background-color: #f1f1f1;
+    font-weight: bold;
+}
+
+.data-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.search-container {
+    margin-bottom: 20px;
+}
+
+.search-container input {
+    width: 300px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.search-container button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 15px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.pagination button {
+    background-color: #f1f1f1;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    margin: 0 5px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.pagination button.active {
+    background-color: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+@media (max-width: 768px) {
+    .container {
+        width: 90%;
+    }
+    
+    .search-container input {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .search-container button {
+        margin-left: 0;
+    }
+}
+
+.chart-box {
+    height: 400px; /* or try 300px */
+    max-width: 100%;
+    position: relative;
+}
