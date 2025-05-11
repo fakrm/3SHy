@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import secrets
 import time
+import csv
 
 # Email configuration
 EMAIL_HOST = 'smtp.gmail.com'
@@ -120,16 +121,8 @@ class MyHandler(BaseHTTPRequestHandler):
                     self.send_response(200)
                     self.send_header('Content-type', 'text/html')
                     self.end_headers()
-                    response = '''
-                    <html>
-                    <body>
-                        <h2>Verification Email Sent</h2>
-                        <p>A verification email has been sent to your email address.</p>
-                        <p>Please check your inbox and click the verification link to complete your registration.</p>
-                        <p><a href="/login.html">Back to Login</a></p>
-                    </body>
-                    </html>
-                    '''
+                    with open(os.path.join("templates", "verification_sent.html"), "r", encoding="utf-8") as file:
+                       response = file.read()
                     self.wfile.write(response.encode())
                 else:
                     # Error sending email
@@ -173,7 +166,7 @@ class MyHandler(BaseHTTPRequestHandler):
                         
                         # Login successful - redirect to dashboard
                         self.send_response(302)
-                        self.send_header('Location', '/databasedata.html')
+                        self.send_header('Location', '/templates/databasedata.html')
                         self.end_headers()
                     else:
                         # User not verified
@@ -204,6 +197,9 @@ class MyHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(f"Server error: {str(e)}".encode())
             print("⚠️ Server exception:", e)
+    
+
+
 
     # Handle GET requests
     def do_GET(self):
@@ -227,7 +223,7 @@ class MyHandler(BaseHTTPRequestHandler):
                     <body>
                         <h2>Invalid Verification Link</h2>
                         <p>The verification link is invalid or has expired.</p>
-                        <p><a href="/signup.html">Sign Up Again</a></p>
+                        <p><a href="/templates/signup.html">Sign Up Again</a></p>
                     </body>
                     </html>
                     '''
@@ -248,7 +244,7 @@ class MyHandler(BaseHTTPRequestHandler):
                     <body>
                         <h2>Verification Link Expired</h2>
                         <p>The verification link has expired. Please sign up again.</p>
-                        <p><a href="/signup.html">Sign Up Again</a></p>
+                        <p><a href="/templates/signup.html">Sign Up Again</a></p>
                     </body>
                     </html>
                     '''
@@ -289,15 +285,15 @@ class MyHandler(BaseHTTPRequestHandler):
                 cursor.close()
                 conn.close()
                 
-                # Redirect to login page
+                # Redirect to login page with leading slash
                 self.send_response(302)
-                self.send_header('Location', '/login.html')
+                self.send_header('Location', '/templates/login.html')
                 self.end_headers()
                 return
             
             # Default route
             if path == '/' or path == '/index.html':
-                self.path = '/login.html'
+                self.path = '/templates/login.html'
                 
             # Get file path
             file_path = self.path[1:]  # Remove leading '/'
@@ -305,14 +301,18 @@ class MyHandler(BaseHTTPRequestHandler):
             # Handle HTML files
             if file_path.endswith('.html'):
                 try:
+                    # Use os.path.join for safer path handling
                     with open(file_path, 'rb') as f:
                         self.send_response(200)
                         self.send_header('Content-type', 'text/html')
                         self.end_headers()
                         self.wfile.write(f.read())
                 except FileNotFoundError:
+                    print(f"HTML file not found: {file_path}")
                     self.send_response(404)
+                    self.send_header('Content-type', 'text/html')
                     self.end_headers()
+                    self.wfile.write(b"File not found")
                     
             # Handle CSS files
             elif file_path.startswith('css/') and file_path.endswith('.css'):
@@ -323,6 +323,7 @@ class MyHandler(BaseHTTPRequestHandler):
                         self.end_headers()
                         self.wfile.write(f.read())
                 except FileNotFoundError:
+                    print(f"CSS file not found: {file_path}")
                     self.send_response(404)
                     self.end_headers()
                     
@@ -335,12 +336,17 @@ class MyHandler(BaseHTTPRequestHandler):
                         self.end_headers()
                         self.wfile.write(f.read())
                 except FileNotFoundError:
+                    print(f"JS file not found: {file_path}")
                     self.send_response(404)
                     self.end_headers()
             
             else:
+                print(f"Unhandled path: {self.path}")
                 self.send_response(404)
                 self.end_headers()
+
+
+
 
         except Exception as e:
             self.send_response(500)
@@ -348,6 +354,7 @@ class MyHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(f"Server error: {str(e)}".encode())
             print("⚠️ Server exception (GET):", e)
+            
 
     # Generate data.js file for the dashboard
     def _generate_data_js(self, username, cursor):
@@ -393,14 +400,17 @@ class MyHandler(BaseHTTPRequestHandler):
             }
             
             # Write to data.js file with JavaScript-compatible syntax
-            js_file_path = os.path.join(os.getcwd(), 'data.js')  # Full path for writing to file
-            
+            #js_file_path = os.path.join(os.getcwd(), 'data.js')  # Full path for writing to file
+            js_file_path = os.path.join('js', 'data.js')
             with open(js_file_path, 'w') as f:
                 f.write(f"const tableData = {json.dumps(js_data, indent=2)};\n")
                 f.write("console.log('Data loaded:', tableData);\n")  # Optional: Log data for debugging purposes
 
         except Exception as e:
             print(f"Error generating data.js: {e}")
+
+
+
 
 # Start the server
 def run(server_class=HTTPServer, handler_class=MyHandler):

@@ -148,6 +148,7 @@ body {
     border-radius: 50%;
     margin-right: 10px;
     background-color: white;
+    
 }
 
 .logout-btn {
@@ -210,6 +211,7 @@ body {
     padding: 10px 15px;
     cursor: pointer;
     margin-left: 10px;
+    
 }
 
 .pagination {
@@ -253,3 +255,29 @@ body {
     max-width: 100%;
     position: relative;
 }
+
+
+.table-btn {
+    background-color:lightpink; /* Green background */
+    color: black;              /* White text */
+    border: 2px solid palevioletred;             /* No border */
+    padding: 8px 16px;         /* Adding some padding */
+    cursor: pointer;           /* Hand cursor on hover */
+    border-radius: 4px;        /* Rounded corners */
+    transition: all 0.3s;      /* Smooth transition for hover effects */
+}
+
+.table-btn:hover {
+    background-color: plum;
+}
+
+.table-btn.active {
+    background-color: plum; /* Different color for active button */
+    font-weight: bold;         /* Bold text for active button */
+}
+
+.table-btn:hover {
+    border-color: lightsalmon;
+}
+
+

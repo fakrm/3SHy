@@ -33,16 +33,19 @@ window.onload = function() {
     setupViewButtons();
 };
 
-// Populate table menu with all available tables
 function populateTableMenu() {
     const tableMenu = document.getElementById('tableMenu');
     tableMenu.innerHTML = '';
     
-    Object.keys(allTablesData).forEach(tableName => {
+    const tableNames = Object.keys(allTablesData);
+    
+    tableNames.forEach((tableName, index) => {
         const button = document.createElement('button');
         button.textContent = tableName.charAt(0).toUpperCase() + tableName.slice(1);
         button.classList.add('table-btn');
         button.dataset.table = tableName;
+
+        console.log("Table names:", tableNames);
         button.onclick = function() {
             switchTable(tableName);
         };
@@ -52,6 +55,14 @@ function populateTableMenu() {
         }
         
         tableMenu.appendChild(button);
+        
+        // Add separator after each button except the last one
+        if (index < tableNames.length - 1) {
+            const separator = document.createElement('span');
+            separator.textContent = ' | ';
+            separator.style.margin = '0 5px';
+            tableMenu.appendChild(separator);
+        }
     });
 }
 
@@ -132,7 +143,7 @@ function loadTableData(tableName) {
     
     // Process data based on table structure
     let processedData;
-    if (tableName === 'facility') {
+    if (tableName === 'fr_energy_hubs') {
         processedData = processFacilityData(tableData.rows);
     } else if (tableName === 'fieten') {
         processedData = processFietenData(tableData.rows);
@@ -245,7 +256,7 @@ function filterByDate() {
         updateTable(allTablesData[currentTable].rows);
         
         // Update chart with new filter
-        const processedData = currentTable === 'facility' 
+        const processedData = currentTable === 'fr_energy_hubs' 
             ? processFacilityData(allTablesData[currentTable].rows)
             : processFietenData(allTablesData[currentTable].rows);
             
@@ -369,7 +380,7 @@ function createOrUpdateChart(data, tableName) {
     
     // Prepare chart data based on view and table
     let chartData;
-    if (tableName === 'facility') {
+    if (tableName === 'fr_energy_hubs') {
         chartData = prepareFacilityChartData(data);
     } else if (tableName === 'fieten') {
         chartData = prepareFietenChartData(data);
@@ -879,7 +890,7 @@ function searchData() {
     
     // Process raw data
     let processedData;
-    if (currentTable === 'facility') {
+    if (currentTable === 'fr_energy_hubs') {
         processedData = processFacilityData(allTablesData[currentTable].rows);
     } else if (currentTable === 'fieten') {
         processedData = processFietenData(allTablesData[currentTable].rows);
