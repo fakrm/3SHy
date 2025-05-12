@@ -59,7 +59,7 @@ function populateTableMenu() {
         // Add separator after each button except the last one
         if (index < tableNames.length - 1) {
             const separator = document.createElement('span');
-            separator.textContent = ' | ';
+            //separator.textContent = ' | ';
             separator.style.margin = '0 5px';
             tableMenu.appendChild(separator);
         }

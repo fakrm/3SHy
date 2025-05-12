@@ -204,7 +204,7 @@ body {
 }
 
 .search-container button {
-    background-color: #3498db;
+    background-color: #007bff;
     color: white;
     border: none;
     border-radius: 5px;
@@ -258,26 +258,67 @@ body {
 
 
 .table-btn {
-    background-color:lightpink; /* Green background */
-    color: black;              /* White text */
-    border: 2px solid palevioletred;             /* No border */
-    padding: 8px 16px;         /* Adding some padding */
-    cursor: pointer;           /* Hand cursor on hover */
-    border-radius: 4px;        /* Rounded corners */
-    transition: all 0.3s;      /* Smooth transition for hover effects */
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;  
 }
 
 .table-btn:hover {
-    background-color: plum;
+    background-color: #0056b3;
 }
 
 .table-btn.active {
-    background-color: plum; /* Different color for active button */
+    background-color: #0056b3; /* Different color for active button */
     font-weight: bold;         /* Bold text for active button */
 }
 
 .table-btn:hover {
-    border-color: lightsalmon;
+    border-color: #0056b3;
 }
 
 
+.view-btn {
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.view-btn:hover {
+    background-color: #0056b3;
+}
+
+
+.view-btn.active {
+     background-color: #0056b3; 
+    font-weight: bold;  
+}
+
+
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper input {
+    padding-right: 30px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
+}

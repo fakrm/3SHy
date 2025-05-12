@@ -23,8 +23,11 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="login-password">Password:</label>
-                    <input type="password" id="login-password" name="password" required>
+                      <label for="signup-password">Password:</label>
+                     <div class="password-wrapper">
+                        <input type="password" id="signup-password" name="password" required>
+                        <span class="toggle-password" onclick="togglePassword('signup-password', this)">👁️</span>
+                     </div>
                 </div>
                 
                 <button type="submit" class="btn">Login</button>
@@ -35,5 +38,19 @@
             </form>
         </div>
     </div>
+
+
+    <script>
+        function togglePassword(fieldId, icon) {
+         const field = document.getElementById(fieldId);
+          if (field.type === "password") {
+          field.type = "text";
+           icon.textContent = "🙈";
+             } else {
+            field.type = "password";
+           icon.textContent = "👁️";
+          }
+        }
+    </script>
 </body>
 </html>
