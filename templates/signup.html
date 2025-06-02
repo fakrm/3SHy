@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
+    <!--To use css-->
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
@@ -31,7 +32,7 @@
                       <label for="signup-password">Password:</label>
                      <div class="password-wrapper">
                         <input type="password" id="signup-password" name="password" required>
-                        <span class="toggle-password" onclick="togglePassword('signup-password', this)">👁️</span>
+                        <span class="toggle-password" onclick="ShowHidepass('signup-password', this)">👁️</span>
                      </div>
                     </div>
 
@@ -39,8 +40,9 @@
                       <label for="signup-confirm">Confirm Password:</label>
                      <div class="password-wrapper">
                         <input type="password" id="signup-confirm" name="confirm-password" required>
-                        <span class="toggle-password" onclick="togglePassword('signup-confirm', this)">👁️</span>
+                        <span class="toggle-password" onclick="ShowHidepass('signup-confirm', this)">👁️</span>
                      </div>
+                      <div id="passwordStrength" class="password-strength"></div>
                     </div>
                 
                 <button type="submit" class="btn">Sign Up</button>
@@ -53,7 +55,7 @@
     </div>
 
     <script>
-        // Password confirmation validation
+        
         document.getElementById('signup-form').addEventListener('submit', function(event) {
             const password = document.getElementById('signup-password').value;
             const confirmPassword = document.getElementById('signup-confirm').value;
@@ -64,16 +66,42 @@
             }
         });
 
-        function togglePassword(fieldId, icon) {
+        function ShowHidepass(fieldId, icon) {
          const field = document.getElementById(fieldId);
         if (field.type === "password") {
         field.type = "text";
         icon.textContent = "🙈";
          } else {
+            //For hiding and showing pass
         field.type = "password";
         icon.textContent = "👁️";
           }
         }
+
+         //find password by Id and then listen for any user input
+        document.getElementById('signup-password').addEventListener('input', function() {
+            var password = this.value;
+            var strengthDiv = document.getElementById('passwordStrength');
+            //In this part the rules for password are set
+            var hasMinLength = password.length >= 8; //At least length
+            var hasNumber = /\d/.test(password);//should have number
+            var hasUpper = /[A-Z]/.test(password);//should have capital letter
+            var hasLower = /[a-z]/.test(password);//should have small letter
+            
+            var requirements = [];
+            if (!hasMinLength) requirements.push('At least 8 characters');
+            if (!hasNumber) requirements.push('One number');
+            if (!hasUpper) requirements.push('One uppercase letter');
+            if (!hasLower) requirements.push('One lowercase letter');
+            
+            if (requirements.length === 0) {//if requirement array is empty means all requirements are met, then it shows message for strong pass 
+                strengthDiv.innerHTML = '<span style="color: green;"> Strong password</span>';
+                strengthDiv.className = 'password-strength strong';
+            } else {//if array is not empty means there are some conditions need to complete, it shows red and will show array item
+                strengthDiv.innerHTML = '<span style="color: red;">Missing: ' + requirements.join(', ') + '</span>';
+                strengthDiv.className = 'password-strength weak';
+            }
+        });
 
     </script>
 </body>

@@ -26,7 +26,7 @@
                       <label for="signup-password">Password:</label>
                      <div class="password-wrapper">
                         <input type="password" id="signup-password" name="password" required>
-                        <span class="toggle-password" onclick="togglePassword('signup-password', this)">👁️</span>
+                        <span class="toggle-password" onclick="ShowHidepass('signup-password', this)">👁️</span>
                      </div>
                 </div>
                 
@@ -41,7 +41,7 @@
 
 
     <script>
-        function togglePassword(fieldId, icon) {
+        function ShowHidepass(fieldId, icon) {
          const field = document.getElementById(fieldId);
           if (field.type === "password") {
           field.type = "text";

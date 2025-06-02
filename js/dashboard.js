@@ -3,18 +3,19 @@ let allTablesData = {};
 let currentTable = '';
 let currentView = '15min';
 let charts = {};
-let currentPage = 1;
-const rowsPerPage = 10;
+let currentPage = 1;//start with one
+const rowsPerPage = 10;//For raw data
 
 // Load data when page loads
 window.onload = function() {
     // Check if tableData exists
+    //Table data is all tables in DB in data.js
     if (typeof tableData === 'undefined') {
         console.error("Error: tableData is not defined. Make sure data.js is loaded correctly.");
         return;
     }
     
-    // Set username
+    // Set username from DB
     document.getElementById('username').textContent = tableData.username;
     
     // Store all tables data
@@ -35,12 +36,14 @@ window.onload = function() {
 
 function populateTableMenu() {
     const tableMenu = document.getElementById('tableMenu');
+    //Clear 
     tableMenu.innerHTML = '';
     
     const tableNames = Object.keys(allTablesData);
     
     tableNames.forEach((tableName, index) => {
         const button = document.createElement('button');
+        //Set first name to capital
         button.textContent = tableName.charAt(0).toUpperCase() + tableName.slice(1);
         button.classList.add('table-btn');
         button.dataset.table = tableName;
@@ -66,7 +69,7 @@ function populateTableMenu() {
     });
 }
 
-// Set up view option buttons
+// Set up view option buttons, color change 
 function setupViewButtons() {
     const viewButtons = document.querySelectorAll('.view-btn');
     viewButtons.forEach(button => {
@@ -102,13 +105,13 @@ function switchTable(tableName) {
     // Set current table
     currentTable = tableName;
     
-    // Update table name display
+    // Update table name display and make first letter capital, Charat returns the letter at index 0 and then concatinate with the rest of string
     document.getElementById('currentTableName').textContent = tableName.charAt(0).toUpperCase() + tableName.slice(1) + ' Data';
     
     // Update chart title
     document.getElementById('currentChartTitle').textContent = tableName.charAt(0).toUpperCase() + tableName.slice(1) + ' ' + getViewTitle();
     
-    // Reset pagination
+    // Show raw data from first page
     currentPage = 1;
     
     // Load data for selected table
@@ -117,6 +120,7 @@ function switchTable(tableName) {
 
 // Get title based on current view
 function getViewTitle() {
+    //Switch state
     switch(currentView) {
         case '15min':
             return '15-Minute Interval Data';
@@ -141,14 +145,42 @@ function loadTableData(tableName) {
     // Generate table headers
     generateTableHeaders(tableData.columns);
     
-    // Process data based on table structure
+    // Based on the selected table name process function will be called
     let processedData;
     if (tableName === 'fr_energy_hubs') {
         processedData = processFacilityData(tableData.rows);
+        document.getElementById('intervaloptions').style.display = '';
+         document.getElementById('textdate').style.display = '';
+         document.getElementById('currentChartTitle').style.display = '';
+         document.getElementById('containerch').style.display = '';
     } else if (tableName === 'fieten') {
         processedData = processFietenData(tableData.rows);
-    } else {
+         document.getElementById('intervaloptions').style.display = '';
+         document.getElementById('textdate').style.display = '';
+         document.getElementById('currentChartTitle').style.display = '';
+        document.getElementById('containerch').style.display = '';
+    
+    } else if (tableName === 'zem') {
+      processedData = processZemData(tableData.rows);
+     document.getElementById('intervaloptions').style.display = '';
+         document.getElementById('textdate').style.display = '';
+          document.getElementById('currentChartTitle').style.display = '';
+          document.getElementById('containerch').style.display = '';
+      }
+
+
+    
+    else if (tableName === 'users' || tableName === 'parties') {//If the selected table was not above
         // Generic processing for other tables
+        document.getElementById('intervaloptions').style.display = 'none';
+         document.getElementById('textdate').style.display = 'none';
+          document.getElementById('currentChartTitle').style.display = 'none';
+          document.getElementById('containerch').style.display = 'none';
+         
+         
+
+         
+        
         processedData = tableData.rows.map((row, index) => {
             const rowData = {};
             tableData.columns.forEach((col, i) => {
@@ -168,7 +200,7 @@ function loadTableData(tableName) {
     createOrUpdateChart(processedData, tableName);
 }
 
-// Process facility data into structured format
+// Process facility data (FR)
 function processFacilityData(rows) {
     return rows.map(row => {
         return {
@@ -198,8 +230,42 @@ function processFietenData(rows) {
     });
 }
 
-// Populate date filter dropdown
-function populateDateFilter(data, tableName) {
+
+//Defined fields for raw table show
+function processZemData(rows) {
+    return rows.map(row => {
+        return {
+            Date1: row[0],
+            Time: row[1],
+            'Energy Consumption 2023': parseFloat(row[2]) || 0,
+            unknown: row[3],
+            Date2: row[4],
+            'Time.1': row[5],
+            'Estimated Energy Consumption 2023': parseFloat(row[6]) || 0,
+            Date3: row[7],
+            'Time.2': row[8],
+            'Estimated Energy Consumption 2024': parseFloat(row[9]) || 0,
+            Date4: row[10],
+            'Time.3': row[11],
+            'Estimated Energy Consumption 2025': parseFloat(row[12]) || 0,
+            Date5: row[13],
+            'Time.4': row[14],
+            'Estimated Energy Consumption 2026': parseFloat(row[15]) || 0,
+            'Unnamed: 16': row[16],
+            Date6: row[17],
+            'Time.5': row[18],
+            'Estimated Energy Consumption 2027': parseFloat(row[19]) || 0,
+            Date7: row[20],
+            'Time.6': row[21],
+            'Estimated Energy Consumption 2028': parseFloat(row[22]) || 0,
+            party_id: row[23]
+        };
+    });
+}
+
+// Populate date filter dropdown based on dates
+//This is not correct should be based on table name and avalable dates for that specific company
+/*function populateDateFilter(data, tableName) {
     const dateFilter = document.getElementById('dateFilter');
     dateFilter.innerHTML = '<option value="all">All Dates</option>';
     
@@ -208,6 +274,15 @@ function populateDateFilter(data, tableName) {
     if (tableName === 'fieten') {
         dateField = 'Date_hour';
     }
+     if (tableName === 'zem') {
+        dateField = 'Date1';
+    }
+    if (currentTable === 'zem') {
+    dateField = 'Date1';
+    }
+    else if (currentTable === 'zem') {
+    processedData = processZemData(allTablesData[currentTable].rows);
+}
     
     // Get unique dates
     const dates = [...new Set(data.map(item => item[dateField]))].sort();
@@ -218,7 +293,53 @@ function populateDateFilter(data, tableName) {
         option.textContent = date;
         dateFilter.appendChild(option);
     });
+}*/
+function populateDateFilter(data, tableName) {
+    const dateFilter = document.getElementById('dateFilter');
+    
+    if (tableName == "users" || tableName == "parties") {
+        // Hide the date filter for users and parties tables
+        dateFilter.style.display = 'none';
+        // Optional: Also hide the label if you have one
+        const dateFilterLabel = document.getElementById('dateFilterLabel');
+        if (dateFilterLabel) {
+            dateFilterLabel.style.display = 'none';
+        }
+    }
+    else {
+        // Show the date filter for other tables
+        dateFilter.style.display = 'block';
+        // Optional: Show the label too
+        const dateFilterLabel = document.getElementById('dateFilterLabel');
+        if (dateFilterLabel) {
+            dateFilterLabel.style.display = 'block';
+        }
+        
+        dateFilter.innerHTML = '<option value="all">All Dates</option>';
+
+        // Map table names to their date field names
+        const dateFieldsMap = {
+            'fr_energy_hubs': 'date',
+            'fieten': 'Date_hour',
+            'zem': 'Date1'
+        };
+
+        // Use the mapped date field, or fallback to 'date'
+        const dateField = dateFieldsMap[tableName] || 'date';
+
+        // Extract unique dates from data using the correct field
+        const dates = [...new Set(data.map(item => item[dateField]))].sort();
+
+        // Populate the dropdown with unique date options
+        dates.forEach(date => {
+            const option = document.createElement('option');
+            option.value = date;
+            option.textContent = date;
+            dateFilter.appendChild(option);
+        });
+    }
 }
+
 
 // Update table with data
 function updateTable(data) {
@@ -244,6 +365,9 @@ function filterDataByDate(data) {
     let dateField = 'date';
     if (currentTable === 'fieten') {
         dateField = 'Date_hour';
+    }
+     if (currentTable === 'zem') {
+        dateField = 'Date1';
     }
     
     return data.filter(item => item[dateField] === selectedDate);
@@ -384,7 +508,11 @@ function createOrUpdateChart(data, tableName) {
         chartData = prepareFacilityChartData(data);
     } else if (tableName === 'fieten') {
         chartData = prepareFietenChartData(data);
-    } else {
+    } 
+     else if (tableName === 'zem') {
+    chartData = prepareZemChartData(data);}
+    
+    else {
         // Generic chart data preparation
         chartData = {
             labels: ['No data available'],
@@ -613,6 +741,262 @@ function prepareFietenChartData(data) {
     }
 }
 
+function prepare15MinZemChart(data) {
+    // Use Date1 and Time for primary data
+    const sortedData = [...data].sort((a, b) => {
+        const timeToMinutes = (timeStr) => {
+            if (!timeStr) return 0;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        };
+        return timeToMinutes(a.Time) - timeToMinutes(b.Time);
+    });
+    
+    const labels = sortedData.map(item => item.Time || 'N/A');
+    
+    return {
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Estimated Energy 2023 (kWh)',
+                    data: sortedData.map(item => item['Estimated Energy Consumption 2023']),
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                },
+                {
+                    label: 'Estimated Energy 2024 (kWh)',
+                    data: sortedData.map(item => item['Estimated Energy Consumption 2024']),
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                },
+                {
+                    label: 'Estimated Energy 2025 (kWh)',
+                    data: sortedData.map(item => item['Estimated Energy Consumption 2025']),
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                },
+                {
+                    label: 'Estimated Energy 2026 (kWh)',
+                    data: sortedData.map(item => item['Estimated Energy Consumption 2026']),
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                },
+                {
+                    label: 'Estimated Energy 2027 (kWh)',
+                    data: sortedData.map(item => item['Estimated Energy Consumption 2027']),
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                },
+                {
+                    label: 'Estimated Energy 2028 (kWh)',
+                    data: sortedData.map(item => item['Estimated Energy Consumption 2028']),
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Energy Consumption (kWh)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Time'
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Estimated Energy Consumption by Year (15-min intervals)'
+                },
+                legend: {
+                    display: true
+                }
+            }
+        }
+    };
+}
+
+
+function prepareDailyZemChart(data) {
+    // Group by date (using Date1 as primary date)
+    const dailyData = {};
+    data.forEach(item => {
+        const date = item.Date1 || 'Unknown';
+        if (!dailyData[date]) {
+            dailyData[date] = {
+                2023: [],
+                2024: [],
+                2025: [],
+                2026: [],
+                2027: [],
+                2028: []
+            };
+        }
+        dailyData[date][2023].push(item['Estimated Energy Consumption 2023']);
+        dailyData[date][2024].push(item['Estimated Energy Consumption 2024']);
+        dailyData[date][2025].push(item['Estimated Energy Consumption 2025']);
+        dailyData[date][2026].push(item['Estimated Energy Consumption 2026']);
+        dailyData[date][2027].push(item['Estimated Energy Consumption 2027']);
+        dailyData[date][2028].push(item['Estimated Energy Consumption 2028']);
+    });
+    
+    const dates = Object.keys(dailyData).sort();
+    const years = [2023, 2024, 2025, 2026, 2027, 2028];
+    const colors = [
+        'rgba(255, 99, 132, 0.6)',
+        'rgba(54, 162, 235, 0.6)',
+        'rgba(75, 192, 192, 0.6)',
+        'rgba(153, 102, 255, 0.6)',
+        'rgba(255, 159, 64, 0.6)',
+        'rgba(255, 206, 86, 0.6)'
+    ];
+    
+    const datasets = years.map((year, index) => ({
+        label: `Avg. Energy ${year} (kWh)`,
+        data: dates.map(date => {
+            const values = dailyData[date][year].filter(v => v > 0);
+            return values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
+        }),
+        backgroundColor: colors[index],
+        borderColor: colors[index].replace('0.6', '1'),
+        borderWidth: 1
+    }));
+    
+    return {
+        data: {
+            labels: dates,
+            datasets: datasets
+        },
+        options: defaultChartOptions('Daily Average Energy Consumption by Year')
+    };
+}
+function prepareAverageZemChart(data) {
+    // Group by hour across all dates
+    const hourlyData = {};
+    
+    // Initialize hourly data structure
+    for (let hour = 0; hour < 24; hour++) {
+        const hourStr = hour.toString().padStart(2, '0');
+        hourlyData[hourStr] = {
+            2023: [],
+            2024: [],
+            2025: [],
+            2026: [],
+            2027: [],
+            2028: []
+        };
+    }
+    
+    // Process data
+    data.forEach(item => {
+        const time = item.Time || '00:00';
+        const hour = time.split(':')[0];
+        
+        if (hourlyData[hour]) {
+            hourlyData[hour][2023].push(item['Estimated Energy Consumption 2023']);
+            hourlyData[hour][2024].push(item['Estimated Energy Consumption 2024']);
+            hourlyData[hour][2025].push(item['Estimated Energy Consumption 2025']);
+            hourlyData[hour][2026].push(item['Estimated Energy Consumption 2026']);
+            hourlyData[hour][2027].push(item['Estimated Energy Consumption 2027']);
+            hourlyData[hour][2028].push(item['Estimated Energy Consumption 2028']);
+        }
+    });
+    
+    const hours = Object.keys(hourlyData).sort();
+    const years = [2023, 2024, 2025, 2026, 2027, 2028];
+    const colors = [
+        'rgba(255, 99, 132, 0.2)',
+        'rgba(54, 162, 235, 0.2)',
+        'rgba(75, 192, 192, 0.2)',
+        'rgba(153, 102, 255, 0.2)',
+        'rgba(255, 159, 64, 0.2)',
+        'rgba(255, 206, 86, 0.2)'
+    ];
+    
+    const datasets = years.map((year, index) => ({
+        label: `Avg. Energy ${year} (kWh)`,
+        data: hours.map(hour => {
+            const values = hourlyData[hour][year].filter(v => v > 0);
+            return values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
+        }),
+        backgroundColor: colors[index],
+        borderColor: colors[index].replace('0.2', '1'),
+        borderWidth: 2,
+        tension: 0.3,
+        fill: true
+    }));
+    
+    return {
+        data: {
+            labels: hours.map(h => `${h}:00`),
+            datasets: datasets
+        },
+        options: defaultChartOptions('Average Energy Consumption by Hour and Year')
+    };
+}
+
+
+function prepareZemChartData(data) {
+    // Apply date filter
+    const filteredData = filterDataByDate(data);
+    
+    if (filteredData.length === 0) {
+        return {
+            data: {
+                labels: ['No data available'],
+                datasets: [{
+                    label: 'No data',
+                    data: [0],
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: defaultChartOptions('No Data')
+        };
+    }
+    
+    // Prepare data based on view
+    switch(currentView) {
+        case '15min':
+            return prepare15MinZemChart(filteredData);
+        case 'daily':
+            return prepareDailyZemChart(filteredData);
+        case 'average':
+            return prepareAverageZemChart(filteredData);
+        default:
+            return prepare15MinZemChart(filteredData);
+    }
+}
 // Prepare 15-minute interval chart for fieten data
 function prepare15MinFietenChart(data) {
     // Sort data by time
@@ -894,7 +1278,11 @@ function searchData() {
         processedData = processFacilityData(allTablesData[currentTable].rows);
     } else if (currentTable === 'fieten') {
         processedData = processFietenData(allTablesData[currentTable].rows);
-    } else {
+    } 
+    else if (currentTable === 'zem') {
+        processedData = processZemData(allTablesData[currentTable].rows);
+    }
+    else {
         processedData = allTablesData[currentTable].rows.map((row, index) => {
             const rowData = {};
             allTablesData[currentTable].columns.forEach((col, i) => {

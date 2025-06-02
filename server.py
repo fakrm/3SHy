@@ -9,13 +9,8 @@ from email.mime.multipart import MIMEMultipart
 import secrets
 import time
 import csv
+from config import DB_CONFIG, EMAIL_CONFIG, SERVER_CONFIG
 
-# Email configuration
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'miasafaei1376@gmail.com'  
-EMAIL_HOST_PASSWORD = 'nrxh bfjc ymbq sxcz'
 
 # Store verification tokens (in a real application, this should be in a database)
 verification_tokens = {}  # {token: {'username': username, 'email': email, 'password': password, 'timestamp': timestamp}}
@@ -30,7 +25,7 @@ class MyHandler(BaseHTTPRequestHandler):
             
             # Set up the email
             msg = MIMEMultipart()
-            msg['From'] = EMAIL_HOST_USER
+            msg['From'] = EMAIL_CONFIG['user']
             msg['To'] = email
             msg['Subject'] = 'Email Verification'
             
@@ -48,10 +43,10 @@ class MyHandler(BaseHTTPRequestHandler):
             
             msg.attach(MIMEText(body, 'html'))
             
-            # Connect to the SMTP server and send the email
-            server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
+            
+            server = smtplib.SMTP(EMAIL_CONFIG['host'], EMAIL_CONFIG['port'])
             server.starttls()
-            server.login(EMAIL_HOST_USER, EMAIL_HOST_PASSWORD)
+            server.login(EMAIL_CONFIG['user'], EMAIL_CONFIG['password'])
             server.send_message(msg)
             server.quit()
             
@@ -81,19 +76,15 @@ class MyHandler(BaseHTTPRequestHandler):
                     self.wfile.write(b'All fields are required')
                     return
 
-                conn = mysql.connector.connect(
-                   host='127.0.0.1',      
-                   user='root',
-                   password='13551379@Fa',
-                   database='ssshy',
-                   auth_plugin='mysql_native_password'
-                )
+                conn = mysql.connector.connect(**DB_CONFIG)
+                   
+            
                 
                 # Check if username or email already exists
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM users WHERE username = %s OR email = %s", (username, email))
                 if cursor.fetchone():
-                    self.send_response(409)  # 409 Conflict
+                    self.send_response(409) 
                     self.send_header('Content-type', 'text/plain')
                     self.end_headers()
                     self.wfile.write(b'Username or email already exists')
@@ -142,13 +133,9 @@ class MyHandler(BaseHTTPRequestHandler):
                 username = data.get('username', [''])[0]
                 password = data.get('password', [''])[0]
 
-                conn = mysql.connector.connect(
-                    host='127.0.0.1',
-                    user='root',
-                    password='13551379@Fa',
-                    database='ssshy',
-                    auth_plugin='mysql_native_password'
-                )
+                conn = mysql.connector.connect(**DB_CONFIG)
+            
+            
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
                 result = cursor.fetchone()
@@ -256,13 +243,9 @@ class MyHandler(BaseHTTPRequestHandler):
                 email = user_data['email']
                 password = user_data['password']
                 
-                conn = mysql.connector.connect(
-                    host='127.0.0.1',
-                    user='root',
-                    password='13551379@Fa',
-                    database='ssshy',
-                    auth_plugin='mysql_native_password'
-                )
+                conn = mysql.connector.connect(**DB_CONFIG)
+                   
+                
                 cursor = conn.cursor()
                 
                 # Add is_verified column if it doesn't exist
@@ -404,7 +387,7 @@ class MyHandler(BaseHTTPRequestHandler):
             js_file_path = os.path.join('js', 'data.js')
             with open(js_file_path, 'w') as f:
                 f.write(f"const tableData = {json.dumps(js_data, indent=2)};\n")
-                f.write("console.log('Data loaded:', tableData);\n")  # Optional: Log data for debugging purposes
+                f.write("console.log('Data loaded:', tableData);\n")  
 
         except Exception as e:
             print(f"Error generating data.js: {e}")
@@ -414,9 +397,9 @@ class MyHandler(BaseHTTPRequestHandler):
 
 # Start the server
 def run(server_class=HTTPServer, handler_class=MyHandler):
-    server_address = ('', 8000)  # Serve on localhost:8000
+    server_address = (SERVER_CONFIG['host'], SERVER_CONFIG['port'])
     httpd = server_class(server_address, handler_class)
-    print('🚀 Server running on http://localhost:8000')
+    print(f'🚀 Server running on http://localhost:{SERVER_CONFIG["port"]}')
     httpd.serve_forever()
 
 if __name__ == '__main__':
