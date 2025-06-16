@@ -6,7 +6,7 @@ import mysql.connector
 
 
 #In this part you can check the data in DB
-#
+#Zem is not correct
 
 # Connect to the database
 conn = mysql.connector.connect(

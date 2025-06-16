@@ -19,6 +19,13 @@ class MyHandler(BaseHTTPRequestHandler):
 
     # Send verification email
     def _send_verification_email(self, email, token):
+
+        if (self.checkemailexist(email)):
+            return False
+        #self.send_header('Location', '/templates/login.html')
+        
+            
+       
         try:
             # Create verification link
             verification_link = f'http://localhost:8000/verify?token={token}'
@@ -76,21 +83,26 @@ class MyHandler(BaseHTTPRequestHandler):
                     self.wfile.write(b'All fields are required')
                     return
 
-                conn = mysql.connector.connect(**DB_CONFIG)
+                # conn = mysql.connector.connect(**DB_CONFIG)
                    
             
                 
                 # Check if username or email already exists
-                cursor = conn.cursor()
-                cursor.execute("SELECT * FROM users WHERE username = %s OR email = %s", (username, email))
-                if cursor.fetchone():
-                    self.send_response(409) 
-                    self.send_header('Content-type', 'text/plain')
-                    self.end_headers()
-                    self.wfile.write(b'Username or email already exists')
-                    cursor.close()
-                    conn.close()
-                    return
+                # cursor = conn.cursor()
+                # cursor.execute("SELECT * FROM users WHERE username = %s OR email = %s", (username, email))
+                #if cursor.fetchone():
+                    # self.send_response(409) 
+                    # self.send_header('Content-type', 'text/plain')
+                    # # self.send_response(302)  # Redirect
+                    # # self.send_header('Location', '/signup?error=duplicate')
+
+                    # self.end_headers()
+                    # self.wfile.write(b'Username or email already exists')
+
+                    
+                    # cursor.close()
+                    # conn.close()
+                    # return
                 
                 # Generate verification token
                 token = secrets.token_urlsafe(32)
@@ -122,8 +134,25 @@ class MyHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(b'Error sending verification email')
                 
-                cursor.close()
-                conn.close()
+                # cursor.close()
+                # conn.close()
+            elif self.path == '/check-email':
+                content_length = int(self.headers['Content-Length'])
+                post_data = self.rfile.read(content_length).decode('utf-8')
+                data = parse_qs(post_data)
+    
+                email = data.get('email', [''])[0]
+    
+   
+                email_exists = self.checkemailexist(email)
+    
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+    
+    
+                response_data = {'exists': bool(email_exists)}
+                self.wfile.write(json.dumps(response_data).encode())
 
             elif self.path == '/login':
                 content_length = int(self.headers['Content-Length'])
@@ -186,7 +215,7 @@ class MyHandler(BaseHTTPRequestHandler):
             print("⚠️ Server exception:", e)
     
 
-
+    
 
     # Handle GET requests
     def do_GET(self):
@@ -194,7 +223,12 @@ class MyHandler(BaseHTTPRequestHandler):
             # Parse the URL and query parameters
             parsed_url = urlparse(self.path)
             path = parsed_url.path
+
+           
+                   
             
+            
+
             # Handle email verification
             if path == '/verify':
                 # Parse query parameters
@@ -337,7 +371,87 @@ class MyHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(f"Server error: {str(e)}".encode())
             print("⚠️ Server exception (GET):", e)
+
+    # def _generate_data_js(self, username, cursor):
+    #     try:
+     
+       
+    
+    #     # Get all tables in the database
+    #     cursor.execute("SHOW TABLES")
+    #     tables = cursor.fetchall()
+        
+    #     # Create a dictionary to hold all the tables and their data
+    #     all_tables_data = {}
+
+    #     for table in tables:
+    #         table_name = table[0]
             
+    #         # Get table structure (columns)
+    #         cursor.execute(f"DESCRIBE {table_name}")
+    #         columns = [row[0] for row in cursor.fetchall()]
+            
+    #         # Get all data from the table
+    #         cursor.execute(f"SELECT * FROM {table_name}")
+    #         rows = cursor.fetchall()
+            
+    #         # Convert data to serializable format (strings)
+    #         rows_data = []
+    #         for row in rows:
+    #             row_data = []
+    #             for cell in row:
+    #                 if isinstance(cell, (bytes, bytearray)):
+    #                     cell = cell.decode('utf-8', errors='replace')
+    #                 row_data.append(str(cell))
+                
+    #             # Special processing for ZEM table
+    #             if table_name.lower() == 'zem':
+    #                 processed_rows = self._process_zem_row(row_data)
+    #                 rows_data.extend(processed_rows)
+    #             else:
+    #                 rows_data.append(row_data)
+            
+    #         # Add the table data to the dictionary
+    #         all_tables_data[table_name] = {
+    #             'columns': columns,
+    #             'rows': rows_data
+    #         }
+
+    #     # Create JavaScript data object with all tables
+    #     js_data = {
+    #         'username': username,
+    #         'allTablesData': all_tables_data
+    #     }
+        
+    #     # Write to data.js file with JavaScript-compatible syntax
+    #     js_file_path = os.path.join('js', 'data.js')
+    #     with open(js_file_path, 'w') as f:
+    #         f.write(f"const tableData = {json.dumps(js_data, indent=2)};\n")
+    #         f.write("console.log('Data loaded:', tableData);\n")  
+
+    # except Exception as e:
+    #     print(f"Error generating data.js: {e}")
+
+        
+            
+    
+
+
+    def checkemailexist(self,email):
+        conn = mysql.connector.connect(**DB_CONFIG)
+            
+            
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE  email=%s", ( email,))
+        result = cursor.fetchone()
+        if result:
+            print(f"User posted email: {email}")
+            found_email = result[1]  # Change index based on your email column position
+            print(f"Email found in database: {found_email}")
+            return True
+        else:
+            print("notning found")
+
 
     # Generate data.js file for the dashboard
     def _generate_data_js(self, username, cursor):
@@ -391,6 +505,11 @@ class MyHandler(BaseHTTPRequestHandler):
 
         except Exception as e:
             print(f"Error generating data.js: {e}")
+
+
+
+
+
 
 
 

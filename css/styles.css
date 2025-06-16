@@ -169,13 +169,14 @@ body {
 .dashboard-content {
     padding: 20px;
 }
-
+/* Check later rows are not fixed corretly*/
 .data-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
-    display: block;
-    overflow-x: auto;
+    /* display: block;
+    
+    overflow-x: hidden; */
     
 }
 .data-table th, .data-table td {
@@ -187,7 +188,7 @@ body {
 
 .data-table thead,
 .data-table tbody {
-    display: table;
+  
     width: 100%;
 }
 .data-table th {
@@ -281,10 +282,12 @@ body {
     background-color: #0056b3;
 }
 
-.table-btn.active {
+ .table-btn.active {
     background-color: #0056b3; /* Different color for active button */
     font-weight: bold;         /* Bold text for active button */
 }
+
+
 
 .table-btn:hover {
     border-color: #0056b3;

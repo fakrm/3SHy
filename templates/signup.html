@@ -15,6 +15,7 @@
         </div>
         
         <div class="form-container">
+            
             <form id="signup-form" action="/signup" method="POST">
                 <h2>Create an Account</h2>
                 
@@ -55,15 +56,76 @@
     </div>
 
     <script>
-        
-        document.getElementById('signup-form').addEventListener('submit', function(event) {
+
+  //  let currentRequirements = [];
+  //Fixed now it dose not allow to submit with week pass
+   let passwordIsStrong = false;
+
+
+    async function checkemailexist(email) {
+        try {
+        const response = await fetch('/check-email', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `email=${encodeURIComponent(email)}`
+        });
+
+        const data = await response.json();
+        return data.exists; // This will be the result from your Python function
+
+        } catch (error) {
+        console.error('Error checking email:', error);
+        return false;
+        }
+}
+
+
+ function checkPasswordStrength(password) {
+                const hasMinLength = password.length >= 8;
+                const hasNumber = /\d/.test(password);
+                const hasUpper = /[A-Z]/.test(password);
+                const hasLower = /[a-z]/.test(password);
+                
+                return {
+                    isStrong: hasMinLength && hasNumber && hasUpper && hasLower,
+                    requirements: {
+                        hasMinLength,
+                        hasNumber,
+                        hasUpper,
+                        hasLower
+                    }
+                };
+        }
+
+        //This part will check for password match
+        //The check will happen after submision button
+        document.getElementById('signup-form').addEventListener('submit',  async function(event){
+             event.preventDefault(); 
             const password = document.getElementById('signup-password').value;
             const confirmPassword = document.getElementById('signup-confirm').value;
-            
-            if (password !== confirmPassword) {
+            const email = document.getElementById('signup-email').value;
+             const emailExists = await checkemailexist(email);
+
+            if (emailExists) {
                 event.preventDefault();
-                alert('Passwords do not match!');
+                alert('Email already exists! Please use a different email address.');
+                return;
             }
+            
+             
+             const passwordStrength = checkPasswordStrength(password);
+            if (!passwordStrength.isStrong) {
+                alert('Please choose a stronger password that meets all requirements.');
+                return;
+            }
+
+            this.submit();
+    
+           
+            
+            //alert('Account created successfully!');
         });
 
         function ShowHidepass(fieldId, icon) {
@@ -78,30 +140,45 @@
           }
         }
 
-         //find password by Id and then listen for any user input
-        document.getElementById('signup-password').addEventListener('input', function() {
-            var password = this.value;
-            var strengthDiv = document.getElementById('passwordStrength');
-            //In this part the rules for password are set
-            var hasMinLength = password.length >= 8; //At least length
-            var hasNumber = /\d/.test(password);//should have number
-            var hasUpper = /[A-Z]/.test(password);//should have capital letter
-            var hasLower = /[a-z]/.test(password);//should have small letter
-            
-            var requirements = [];
-            if (!hasMinLength) requirements.push('At least 8 characters');
-            if (!hasNumber) requirements.push('One number');
-            if (!hasUpper) requirements.push('One uppercase letter');
-            if (!hasLower) requirements.push('One lowercase letter');
-            
-            if (requirements.length === 0) {//if requirement array is empty means all requirements are met, then it shows message for strong pass 
-                strengthDiv.innerHTML = '<span style="color: green;"> Strong password</span>';
-                strengthDiv.className = 'password-strength strong';
-            } else {//if array is not empty means there are some conditions need to complete, it shows red and will show array item
-                strengthDiv.innerHTML = '<span style="color: red;">Missing: ' + requirements.join(', ') + '</span>';
-                strengthDiv.className = 'password-strength weak';
-            }
-        });
+        
+
+      
+     document.getElementById('signup-password').addEventListener('input', function(e) {
+                const password = this.value;
+                const strengthDiv = document.getElementById('passwordStrength');
+                
+                const hasMinLength = password.length >= 8;
+                const hasNumber = /\d/.test(password);
+                const hasUpper = /[A-Z]/.test(password);
+                const hasLower = /[a-z]/.test(password);
+
+                const requirements = [];
+                if (!hasMinLength) requirements.push('At least 8 characters');
+                if (!hasNumber) requirements.push('One number');
+                if (!hasUpper) requirements.push('One uppercase letter');
+                if (!hasLower) requirements.push('One lowercase letter');
+
+                if (requirements.length === 0) {
+                    strengthDiv.innerHTML = '<span style="color: green;">Strong password</span>';
+                    strengthDiv.className = 'password-strength strong';
+                    passwordIsStrong = true;
+                } else {
+                    strengthDiv.innerHTML = '<span style="color: red;">Missing: ' + requirements.join(', ') + '</span>';
+                    strengthDiv.className = 'password-strength weak';
+                    passwordIsStrong = false;
+                }
+});
+
+
+        
+
+        
+
+
+
+
+
+
 
     </script>
 </body>
