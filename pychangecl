@@ -1,0 +1,236 @@
+import pandas as pd
+import numpy as np
+import os
+from datetime import datetime
+
+def standardize_date_for_mysql(date_str, year_str):
+ 
+    try:
+        date_str = str(date_str).strip()
+        year_str = str(year_str).strip()
+        
+        # Skip if date is NaN or empty
+        if pd.isna(date_str) or date_str.lower() in ['nan', '', 'none']:
+            return None
+            
+        # Handle different date formats and add year if needed
+        if '-' in date_str and year_str in date_str:
+            # Format like "1/15-2023" or "15/1-2023"
+            date_part = date_str.split('-')[0]
+            full_date_str = f"{date_part}/{year_str}"
+        elif '/' in date_str:
+            parts = date_str.split('/')
+            if len(parts) == 2:
+                # Format like "1/15" - add year
+                full_date_str = f"{date_str}/{year_str}"
+            elif len(parts) == 3:
+                # Format like "1/15/2023" - use as is
+                full_date_str = date_str
+            else:
+                full_date_str = f"{date_str}/{year_str}"
+        else:
+            # Fallback - try to append year
+            full_date_str = f"{date_str}/{year_str}"
+        
+        # Try different date formats to parse
+        date_formats = [
+            '%m/%d/%Y',    # 1/15/2023
+            '%d/%m/%Y',    # 15/1/2023
+            '%m-%d-%Y',    # 1-15-2023
+            '%d-%m-%Y',    # 15-1-2023
+            '%Y-%m-%d',    # 2023-1-15 (already MySQL format)
+            '%Y/%m/%d',    # 2023/1/15
+        ]
+        
+        for fmt in date_formats:
+            try:
+                parsed_date = datetime.strptime(full_date_str, fmt)
+                # Return in MySQL format: YYYY-MM-DD
+                return parsed_date.strftime('%Y-%m-%d')
+            except ValueError:
+                continue
+        
+        # If all manual formats fail, try pandas auto-detection
+        try:
+            parsed_date = pd.to_datetime(full_date_str, errors='raise')
+            return parsed_date.strftime('%Y-%m-%d')
+        except:
+            pass
+            
+        print(f"Warning: Could not parse date '{date_str}' with year '{year_str}'")
+        return None
+        
+    except Exception as e:
+        print(f"Error processing date '{date_str}': {e}")
+        return None
+
+def reshape_energy_data_mysql_format(input_file, output_file):
+  
+    
+    # Read the CSV file
+    df = pd.read_csv(input_file)
+    
+    # Print original shape and columns for verification
+    print(f"Original data shape: {df.shape}")
+    print(f"Original columns: {list(df.columns)}")
+    
+    # Create empty list to store reshaped data
+    reshaped_data = []
+    
+    # Define the year mappings based on your headers
+    year_mappings = [
+        # Year 2023 (estimated only - keeping the second set)
+        {'year': '2023', 'date_col': 'Date2023.1', 'time_col': 'Time.1', 'energy_col': 'Estimated Energy Consumption 2023'},
+        # Year 2024
+        {'year': '2024', 'date_col': 'Date2024', 'time_col': 'Time.2', 'energy_col': 'Estimated Energy Consumption 2024'},
+        # Year 2025
+        {'year': '2025', 'date_col': 'Date2025', 'time_col': 'Time.3', 'energy_col': 'Estimated Energy Consumption 2025'},
+        # Year 2026
+        {'year': '2026', 'date_col': 'Date2026', 'time_col': 'Time.4', 'energy_col': 'Estimated Energy Consumption 2026'},
+        # Year 2027
+        {'year': '2027', 'date_col': 'Date2027', 'time_col': 'Time.5', 'energy_col': 'Estimated Energy Consumption 2027'},
+        # Year 2028
+        {'year': '2028', 'date_col': 'Date2028', 'time_col': 'Time.6', 'energy_col': 'Estimated Energy Consumption 2028'}
+    ]
+    
+    # Process each year's data
+    for mapping in year_mappings:
+        # Check if all required columns exist
+        required_cols = [mapping['date_col'], mapping['time_col'], mapping['energy_col']]
+        if all(col in df.columns for col in required_cols):
+            
+            # Extract data for this year
+            year_data = df[required_cols + ['party_id']].copy()
+            
+            # Rename columns to standard names
+            year_data = year_data.rename(columns={
+                mapping['date_col']: 'date_raw',
+                mapping['time_col']: 'time',
+                mapping['energy_col']: 'energy'
+            })
+            
+            # Convert dates to MySQL format (YYYY-MM-DD)
+            year_data['date'] = year_data['date_raw'].apply(
+                lambda x: standardize_date_for_mysql(x, mapping['year'])
+            )
+            
+            # Remove the raw date column
+            year_data = year_data.drop(columns=['date_raw'])
+            
+            # Add year column for reference
+            year_data['year'] = mapping['year']
+            
+            # Remove rows where date conversion failed or essential data is missing
+            year_data = year_data.dropna(subset=['date', 'time', 'energy'], how='any')
+            
+            # Add to reshaped data
+            if not year_data.empty:
+                reshaped_data.append(year_data)
+                print(f"Processed {len(year_data)} rows for year {mapping['year']}")
+            else:
+                print(f"No valid data found for year {mapping['year']}")
+        else:
+            missing_cols = [col for col in required_cols if col not in df.columns]
+            print(f"Warning: Missing columns for {mapping['year']}: {missing_cols}")
+    
+    # Combine all years data
+    if reshaped_data:
+        final_df = pd.concat(reshaped_data, ignore_index=True)
+        
+        # Convert date column to datetime for proper sorting
+        final_df['date_dt'] = pd.to_datetime(final_df['date'])
+        
+        # Convert time to proper time format for sorting
+        def standardize_time(time_str):
+            """Convert time to HH:MM:SS format (24-hour format for MySQL)"""
+            try:
+                if pd.isna(time_str):
+                    return None
+                    
+                time_str = str(time_str).strip()
+                
+                # Try different time formats
+                time_formats = [
+                    '%H:%M:%S',      # 14:30:00
+                    '%H:%M',         # 14:30
+                    '%I:%M:%S %p',   # 2:30:00 PM
+                    '%I:%M %p',      # 2:30 PM
+                ]
+                
+                for fmt in time_formats:
+                    try:
+                        time_obj = datetime.strptime(time_str, fmt).time()
+                        return time_obj.strftime('%H:%M:%S')  # MySQL time format
+                    except ValueError:
+                        continue
+                
+                # If all fails, try pandas
+                try:
+                    time_obj = pd.to_datetime(time_str, errors='raise').time()
+                    return time_obj.strftime('%H:%M:%S')
+                except:
+                    pass
+                    
+                print(f"Warning: Could not parse time '{time_str}'")
+                return time_str  # Return original if conversion fails
+                
+            except Exception as e:
+                print(f"Error processing time '{time_str}': {e}")
+                return time_str
+        
+        # Standardize time format
+        final_df['time'] = final_df['time'].apply(standardize_time)
+        
+        # Sort by date, then by party_id, then by time
+        final_df = final_df.sort_values([
+            'date_dt', 
+            'party_id', 
+            'time'
+        ]).reset_index(drop=True)
+        
+        # Remove temporary sorting column and ensure correct column order
+        final_df = final_df[['date', 'time', 'energy', 'party_id']]
+        
+        # Save to new CSV file
+        final_df.to_csv(output_file, index=False)
+        
+        print(f"\nReshaping complete!")
+        print(f"Final data shape: {final_df.shape}")
+        print(f"Final columns: {list(final_df.columns)}")
+        print(f"Data saved to: {output_file}")
+        
+        # Show sample of final data
+        print(f"\nSample of reshaped data (MySQL-compatible format):")
+        print(final_df.head(10))
+        
+        # Verify date format
+        print(f"\nDate format verification:")
+        print(f"Sample dates: {final_df['date'].head().tolist()}")
+        print(f"All dates are in YYYY-MM-DD format: {all(len(str(d)) == 10 and str(d).count('-') == 2 for d in final_df['date'].dropna())}")
+        
+        return final_df
+    else:
+        print("No data was processed. Please check your column names.")
+        return None
+
+# Usage example
+if __name__ == "__main__":
+    input_file = r"D:\saxion\sss\zem_filled_dates.csv"
+    
+   
+    input_dir = os.path.dirname(input_file)
+    output_file = os.path.join(input_dir, "reshaped_energy_data_mysql.csv")
+    
+    print(f"Input file: {input_file}")
+    print(f"Output file: {output_file}")
+    
+    # Run the MySQL-compatible version
+    try:
+        result = reshape_energy_data_mysql_format(input_file, output_file)
+        if result is not None:
+            print(f"\n✅ Success! Data reshaped with MySQL-compatible formats:")
+            print(f"   - Dates: YYYY-MM-DD format")
+            print(f"   - Times: HH:MM:SS format (24-hour)")
+            print(f"   - Total rows: {len(result)}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
