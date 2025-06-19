@@ -39,8 +39,12 @@ function populateTableMenu() {
     const tableMenu = document.getElementById('tableMenu');
     //Clear 
     tableMenu.innerHTML = '';
+    //removed users and parties since the hedaers were correct but the data was not
+    const tableNames = Object.keys(allTablesData).filter(tableName => 
+        tableName !== 'users' && tableName !== 'parties'
+    );
     
-    const tableNames = Object.keys(allTablesData);
+    //const tableNames = Object.keys(allTablesData);
     
     tableNames.forEach((tableName, index) => {
         const button = document.createElement('button');
@@ -107,6 +111,14 @@ function updateViewButtonText() {
                 button.textContent = '15 Min';
             }
         }
+         else if (button.dataset.view === 'daily' && (currentTable === 'hotel' || currentTable=== 'zem')) {
+           // button.remove();
+           button.style.display = 'none';
+           
+        }
+        else {
+                button.style.display = ''; // Show for other companies
+            }
     });
 }
 
@@ -186,6 +198,10 @@ function loadTableData(tableName) {
          document.getElementById('currentChartTitle').style.display = '';
          document.getElementById('containerch').style.display = '';
     }
+    
+   
+    
+
     else if (tableName === 'fieten') {
         processedData = processFietenData(tableData.rows);
          document.getElementById('intervaloptions').style.display = '';
@@ -207,22 +223,32 @@ function loadTableData(tableName) {
           document.getElementById('currentChartTitle').style.display = '';
           document.getElementById('containerch').style.display = '';
       }
+        else if (tableName === 'fastfoodchain') {
+        processedData = processfastfoodchainData(tableData.rows);
+        document.getElementById('intervaloptions').style.display = '';
+         document.getElementById('textdate').style.display = '';
+         document.getElementById('currentChartTitle').style.display = '';
+         document.getElementById('containerch').style.display = '';
+    }
 
     else if (tableName === 'users' || tableName === 'parties') {//If the selected table was not above
+        console.log(`Processing ${tableName} data...`);
         // Generic processing for other tables
+          processedData = allTablesData[tableName].rows.map((row, index) => {
+            const rowData = {};
+            allTablesData[tableName].columns.forEach((col, i) => {
+                rowData[col] = row[i];
+                console.log(`Row ${index}, Column ${col}: ${row[i]}`);
+            });
+            return rowData;
+        });
         
         document.getElementById('intervaloptions').style.display = 'none';
          document.getElementById('textdate').style.display = 'none';
           document.getElementById('currentChartTitle').style.display = 'none';
-          document.getElementById('containerch').style.display = 'none';
+         document.getElementById('containerch').style.display = 'none';
          
-        // processedData = tableData.rows.map((row, index) => {
-        //     const rowData = {};
-        //     tableData.columns.forEach((col, i) => {
-        //         rowData[col] = row[i];
-        //     });
-        //     return rowData;
-        // });
+    
     }
     
     // Populate date filter with this table's dates
@@ -264,6 +290,24 @@ function processChargingplaza1Data(rows) {
             Total_fast_charging: parseFloat(row[2]),
             Total_normal_charging: parseFloat(row[3]),
             party_id: row[4]
+        };
+    });
+}
+
+function processfastfoodchainData(rows) {
+   
+    
+    return rows.map(row => {
+        
+        return {
+            date: row[0],
+      
+            time: row[1],
+            
+            Directe: parseFloat(row[2]),
+            Heating: parseFloat(row[3]),
+            airco: parseFloat(row[4]),
+            party_id: row[5]
         };
     });
 }
@@ -335,7 +379,8 @@ function populateDateFilter(data, tableName) {
              'chargingplaza1': 'date',
             'fieten': 'date',
             'zem': 'date',
-            'hotel': 'date'
+            'hotel': 'date',
+            'fastfoodchain': 'date',
         };
 
         // Use the mapped date field, or fallback to 'date'
@@ -369,6 +414,9 @@ function populateDateFilter(data, tableName) {
         }
           else if (tableName === 'chargingplaza1' && dates.length > 0) {
             dateFilter.value = dates[0]; // Set first date as selected
+        }
+        else if (tableName === 'fastfoodchain' && dates.length > 0) {
+            dateFilter.value = dates[1]; // Set first date as selected
         }
     }
 }
@@ -416,6 +464,9 @@ function filterDataByDate(data) {
      if (currentTable === 'chargingplaza1') {
         dateField = 'date';
     }
+    if (currentTable === 'fastfoodchain') {
+        dateField = 'date';
+    }
     return data.filter(item => item[dateField] === selectedDate);
 }
 
@@ -430,6 +481,9 @@ function filterByDate() {
         else if (currentTable === 'chargingplaza1') {
             processedData = processChargingplaza1Data(allTablesData[currentTable].rows);
         }
+        else if (currentTable === 'fastfoodchain') {
+            processedData = processfastfoodchainData(allTablesData[currentTable].rows);
+        }
         else if (currentTable === 'fieten') {
             processedData = processFietenData(allTablesData[currentTable].rows);
         } else if (currentTable === 'zem') {
@@ -438,15 +492,16 @@ function filterByDate() {
          else if (currentTable === 'hotel') {
             processedData = processHotelData(allTablesData[currentTable].rows);
         } 
-        else {
-            processedData = allTablesData[currentTable].rows.map((row, index) => {
-                const rowData = {};
-                allTablesData[currentTable].columns.forEach((col, i) => {
-                    rowData[col] = row[i];
-                });
-                return rowData;
-            });
-        }
+        
+        // else if (currentTable === 'users' || currentTable === 'parties') {
+        //     processedData = allTablesData[currentTable].rows.map((row, index) => {
+        //         const rowData = {};
+        //         allTablesData[currentTable].columns.forEach((col, i) => {
+        //             rowData[col] = row[i];
+        //         });
+        //         return rowData;
+        //     });
+        // }
         
         // Update table with new filter
         updateTable(processedData);
@@ -583,6 +638,9 @@ function createOrUpdateChart(data, tableName) {
     } else if (tableName === 'chargingplaza1') {
         chartData = prepareChargingplaza1ChartData(filteredData);
     } 
+    else if (tableName === 'fastfoodchain') {
+        chartData = preparefastfoodchainChartData(filteredData);
+    } 
     else if (tableName === 'fieten') {
         chartData = prepareFietenChartData(filteredData);
     } else if (tableName === 'zem') {
@@ -610,7 +668,7 @@ function createOrUpdateChart(data, tableName) {
     
     // Create chart
     charts.dataChart = new Chart(chartCanvas, {
-        type: currentView === 'daily' ? 'bar' : 'line',
+           type: (currentView === 'daily') ? 'bar' : 'line',
         data: chartData.data,
         options: chartData.options
     });
@@ -842,9 +900,11 @@ function prepareAverageChargingplaza1Chart(data) {
 
     const totalCapacityfast = capacityValuesfast.reduce((sum, val) => sum + val, 0);
     const averageCapacityfast = totalCapacityfast / capacityValuesfast.length;
+    console.log(`Total capacity for fast charging on ${selectedDate}: ${averageCapacityfast}`);
 
     const totalCapacitynormal = capacityValuesnormal.reduce((sum, val) => sum + val, 0);
     const averageCapacitynormal = totalCapacitynormal / capacityValuesnormal.length;
+    
 
     // console.log('\n=== CALCULATION RESULTS ===');
     // console.log(`Date: ${selectedDate}`);
@@ -855,26 +915,30 @@ function prepareAverageChargingplaza1Chart(data) {
     
     // Return chart with single data point
     return {
-         type: 'bar',
+        type: 'bar', // or 'line' depending on your preference
+         
         data: {
-            // or 'line' depending on your preference
-            labels: ["A","B","C","D"], // Single label
+            
+            labels: [selectedDate,averageCapacityfast], // Single label
             datasets: [{
                 label: `Fast Average Capacity for ${selectedDate} (MW)`,
-                data: [averageCapacityfast,averageCapacityfast,averageCapacityfast,averageCapacityfast], // Single data point
-                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                data: [averageCapacityfast,averageCapacityfast], // Single data point
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1,
+                 
                 // tension: 0,
                // fill: true
             },
-            {labels: [selectedDate,averageCapacitynormal], // Single label
+            {
+                labels: [selectedDate,averageCapacitynormal], // Single label
                 label: `Normal Average Capacity for ${selectedDate} (MW)`,
-                data: [averageCapacitynormal,averageCapacitynormal,averageCapacitynormal,averageCapacitynormal], // Single data point
+                data: [averageCapacitynormal,averageCapacitynormal], // Single data point
                 backgroundColor: 'rgba(153, 102, 255, 0.2)',
                     borderColor: 'rgba(153, 102, 255, 1)',
                 borderWidth: 1,
                 tension: 0,
+                 
                 // fill: true
             }
 
@@ -883,6 +947,307 @@ function prepareAverageChargingplaza1Chart(data) {
         },
         options: defaultChartOptions(`Average  Daily Capacity for ${selectedDate}`)
     };
+}
+
+
+
+
+function preparefastfoodchainChartData(filteredData) {
+    if (filteredData.length === 0) {
+        return {
+            data: {
+                labels: ['No data available'],
+                datasets: [{
+                    label: 'No data',
+                    data: [0],
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: defaultChartOptions('No Data')
+        };
+    }
+    
+    // Prepare data based on view
+    switch(currentView) {
+        case '15min':
+            return prepare15MinfastfoodchainChart(filteredData);
+        case 'daily':
+            return prepareDailyfastfoodchainChart(filteredData);
+        case 'average':
+            return prepareAveragefastfoodchainChart(filteredData);
+        default:
+            return prepare15MinfastfoodchainChart(filteredData);
+    }
+}
+
+function prepare15MinfastfoodchainChart(data) {
+    // Sort data by time
+    const sortedData = [...data].sort((a, b) => {
+        const timeToMinutes = (timeStr) => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        };
+        return timeToMinutes(a.time) - timeToMinutes(b.time);
+    });
+    
+    // Group by 15-minute intervals
+    const timeDatadirect = {};
+       const timeDataheating = {};
+       const timeDataairco = {};
+
+    sortedData.forEach(item => {
+        const [hours, minutes] = item.time.split(':').map(Number);
+        const interval = minutes - (minutes % 15);
+        const timeKey = `${hours.toString().padStart(2, '0')}:${interval.toString().padStart(2, '0')}`;
+        
+       if (!timeDatadirect[timeKey]) {
+            timeDatadirect[timeKey] = [];
+        }
+        if (!timeDataheating[timeKey]) {
+            timeDataheating[timeKey] = [];
+        }
+        if (!timeDataairco[timeKey]) {
+            timeDataairco[timeKey] = [];
+}
+        //change this since has too value
+        timeDatadirect[timeKey].push(item.Directe);
+        timeDataheating[timeKey].push(item.Heating);
+         timeDataairco[timeKey].push(item.airco);
+    });
+    
+    const times = Object.keys(timeDatadirect).sort();
+
+    const direct = times.map(time => {
+        const values = timeDatadirect[time];
+        return values.reduce((sum, val) => sum + val, 0);
+    });
+
+    const heating = times.map(time => {
+        const values = timeDataheating[time];
+        return values.reduce((sum, val) => sum + val, 0) ;
+    });
+
+      const airco = times.map(time => {
+        const values = timeDataairco[time];
+        return values.reduce((sum, val) => sum + val, 0) ;
+    });
+
+    return {
+        data: {
+            labels: times,
+            datasets: [{
+                label: 'Direct',
+                data: direct,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                tension: 0.3,
+               // fill: true
+            },{
+
+                 label: '  Heating ',
+                data: heating,
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                borderColor: 'rgba(153, 102, 255, 1)',
+                borderWidth: 1,
+                tension: 0.3,
+            },{
+                label: ' Air Conditioning ',
+                data: airco,
+                backgroundColor: 'rgba(255, 64, 166, 0.2)',
+                borderColor: 'rgb(205, 11, 53)',
+                borderWidth: 1,
+                tension: 0.3,
+            }]
+        },
+        options: defaultChartOptions('15-Minute Interval ')
+    };
+}
+
+
+function prepareDailyfastfoodchainChart(data) {
+    //should be added later
+
+    // const selectedDate = document.getElementById('dateFilter').value;
+    
+    // if (selectedDate !== 'all') {
+    //     // Filter data for the selected date (data is already processed by processFacilityData)
+    //     const selectedDateData = data.filter(item => {
+    //         // Convert MM/DD/YYYY to comparable format
+    //         const itemDate = new Date(item.date);
+    //         const selectedDateObj = new Date(selectedDate);
+            
+    //         return itemDate.toDateString() === selectedDateObj.toDateString();
+    //     });
+
+    //     // Group by hour and sum the values
+    //     const hourlyDatafast = {};
+    //     const hourlyDatanormal = {};
+
+    //     selectedDateData.forEach(item => {
+    //         // Parse hour from time (HH:MM format)
+    //         const hour = parseInt(item.time.split(':')[0]);
+            
+    //         // Initialize hour if it doesn't exist
+    //         if (!hourlyDatafast[hour]) {
+    //             hourlyDatafast[hour] = {
+    //                 hour: hour,
+    //                 total: 0,
+    //                 count: 0 // Track number of 15-min intervals
+    //             };
+    //         }
+    //          if (!hourlyDatanormal[hour]) {
+    //             hourlyDatanormal[hour] = {
+    //                 hour: hour,
+    //                 total: 0,
+    //                 count: 0
+    //             };
+    //         }
+            
+    //         // Add the capacity value to the hourly total
+    //         hourlyDatafast[hour].total += item.Total_fast_charging;
+    //         hourlyDatanormal[hour].total += item.Total_normal_charging;
+    //         hourlyDatafast[hour].count += 1;
+    //         hourlyDatanormal[hour].count += 1;
+    //     });
+
+    //     // Convert to array and sort by hour
+    //     const chartData = Object.values(hourlyDatafast)
+    //         .sort((a, b) => a.hour - b.hour)
+    //         .map(item => ({
+    //             hour: `${item.hour.toString().padStart(2, '0')}:00`,
+    //             total: item.total.toFixed(2), // Round to 2 decimal places
+    //             count: item.count
+    //         }));
+    //          const chartDatanormal = Object.values(hourlyDatanormal)
+    //         .sort((a, b) => a.hour - b.hour)
+    //         .map(item => ({
+    //             hour: `${item.hour.toString().padStart(2, '0')}:00`,
+    //             total: item.total.toFixed(2), // Round to 2 decimal places
+    //             count: item.count
+    //         }));
+
+
+    //     // Return the chart configuration
+    //     return {
+    //         type: 'bar', // or 'line' depending on your preference
+    //         data: {
+    //             labels: chartData.map(item => item.hour),
+    //             datasets: [{
+    //                 label: 'Total Available Capacity Fast(Hourly)',
+    //                  data: chartData.map(item => parseFloat((item.total/4).toFixed(2))),
+    //                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
+    //                  borderColor: 'rgba(54, 162, 235, 1)',
+    //                 borderWidth: 1
+    //             },
+    //             {
+    //                 label: 'Total Available Capacity Normal(Hourly)',
+    //                  data: chartDatanormal.map(item => parseFloat((item.total/4).toFixed(2))),
+    //                   backgroundColor: 'rgba(153, 102, 255, 0.2)',
+    //                 borderColor: 'rgba(153, 102, 255, 1)',
+    //                 borderWidth: 1
+
+    //             }
+    //         ]
+    //         },
+    //          options: defaultChartOptions(`Average  Daily Capacity for ${selectedDate}`)
+            
+    //     };
+    // }
+    
+  
+}
+
+function prepareAveragefastfoodchainChart(data) {
+    //should be added later
+
+    // console.log('=== SELECTED DATE AVERAGE CHART DEBUG ===');
+    // console.log('Input data:', data);
+    // console.log('Input data length:', data.length);
+    
+    // // Get user-selected date
+    // const selectedDate = document.getElementById('dateFilter').value;
+    // console.log('User selected date:', selectedDate);
+    
+    // if (selectedDate === 'all' || !selectedDate) {
+    //     console.log('❌ No specific date selected');
+    //     return null; // or show error message
+    // }
+    
+    // console.log(`→ Calculating average for selected date: ${selectedDate}`);
+    
+    // // Filter data for the selected date only
+    // const selectedDateData = data.filter(item => item.date === selectedDate);
+    // console.log(`Filtered data for ${selectedDate}:`, selectedDateData);
+    // console.log(`Found ${selectedDateData.length} records for ${selectedDate}`);
+    
+    // if (selectedDateData.length === 0) {
+    //     console.log('❌ No data found for selected date');
+    //     return null;
+    // }
+    
+    // // Calculate single average for the selected date
+    // const capacityValuesfast = selectedDateData.map(item => {
+    //     console.log(`Time: ${item.time}, Capacity: ${item.Total_fast_charging}`);
+    //     return item.Total_fast_charging;
+    // });
+
+    //   const capacityValuesnormal = selectedDateData.map(item => {
+    //     console.log(`Time: ${item.time}, Capacity: ${item.Total_normal_charging}`);
+    //     return item.Total_normal_charging;
+    // });
+
+    // const totalCapacityfast = capacityValuesfast.reduce((sum, val) => sum + val, 0);
+    // const averageCapacityfast = totalCapacityfast / capacityValuesfast.length;
+    // console.log(`Total capacity for fast charging on ${selectedDate}: ${averageCapacityfast}`);
+
+    // const totalCapacitynormal = capacityValuesnormal.reduce((sum, val) => sum + val, 0);
+    // const averageCapacitynormal = totalCapacitynormal / capacityValuesnormal.length;
+    
+
+    // // console.log('\n=== CALCULATION RESULTS ===');
+    // // console.log(`Date: ${selectedDate}`);
+    // // console.log(`Total data points: ${capacityValues.length}`);
+    // // console.log(`All capacity values: [${capacityValues.slice(0, 10).join(', ')}${capacityValues.length > 10 ? '...' : ''}]`);
+    // // console.log(`Total sum: ${totalCapacity}`);
+    // // console.log(`Average calculation: ${totalCapacity} ÷ ${capacityValues.length} = ${averageCapacity.toFixed(2)} MW`);
+    
+    // // Return chart with single data point
+    // return {
+    //     type: 'bar', // or 'line' depending on your preference
+         
+    //     data: {
+            
+    //         labels: [selectedDate,averageCapacityfast], // Single label
+    //         datasets: [{
+    //             label: `Fast Average Capacity for ${selectedDate} (MW)`,
+    //             data: [averageCapacityfast,averageCapacityfast], // Single data point
+    //             backgroundColor: 'rgba(54, 162, 235, 0.2)',
+    //             borderColor: 'rgba(54, 162, 235, 1)',
+    //             borderWidth: 1,
+                 
+    //             // tension: 0,
+    //            // fill: true
+    //         },
+    //         {
+    //             labels: [selectedDate,averageCapacitynormal], // Single label
+    //             label: `Normal Average Capacity for ${selectedDate} (MW)`,
+    //             data: [averageCapacitynormal,averageCapacitynormal], // Single data point
+    //             backgroundColor: 'rgba(153, 102, 255, 0.2)',
+    //                 borderColor: 'rgba(153, 102, 255, 1)',
+    //             borderWidth: 1,
+    //             tension: 0,
+                 
+    //             // fill: true
+    //         }
+
+    //     ]
+
+    //     },
+    //     options: defaultChartOptions(`Average  Daily Capacity for ${selectedDate}`)
+    // };
 }
 
 
@@ -1191,11 +1556,10 @@ function prepareHotelChartData(filteredData) {
             break;
         case 'average':
            
-                 chartConfig = prepareDailyTotalHotelChart(filteredData);
-                
-            
-           
-           
+                // chartConfig = prepareDailyTotalHotelChart(filteredData);
+                chartConfig = prepareAverageHotelChart(filteredData);
+            break;
+
         default:
             chartConfig = prepareHourlyHotelChart(filteredData);
          
@@ -1205,6 +1569,8 @@ function prepareHotelChartData(filteredData) {
     
     return chartConfig;
 }
+
+
 
 
 function prepareDailyHotelChart(data) {
@@ -1247,7 +1613,7 @@ function prepareDailyHotelChart(data) {
 
             }]
         },
-        options: defaultChartOptions('Daily Average Energy Consumption')
+        options: defaultChartOptions('Daily Average Energy Consumption {') + (selectedDate ? ` for ${selectedDate}` : '')
     };
 }
 
@@ -1256,22 +1622,22 @@ function prepareDailyTotalHotelChart(data, selectedDate) {
     const dayData = data.filter(item => item.date === selectedDate);
     console.log(`Filtered data for ${selectedDate}:`, dayData);
 
-    if (selectedDate !== 'all') {
-        return prepareDailyTotalZemChart(data, selectedDate);
-    }
+    // if (selectedDate !== 'all') {
+    //     return prepareDailyTotalHotelChart(data, selectedDate);
+    // }
     
     // Calculate total for the day
-    const totalEnergy = dayData.reduce((sum, item) => sum + item.energy_distributtion, 0) ;
+    const totalEnergy = dayData.reduce((sum, item) => sum + item.energy_distributtion, 0)/dayData.length; 
     console.log(`Total energy for ${selectedDate}: ${totalEnergy} kWh`);
     
     return {
         type: 'line', 
         data: {
-            labels: [selectedDate],
+            labels: [selectedDate,totalEnergy],
            // labels: [selectedDate],
             datasets: [{
-                label: 'Total Daily Avrage Energy Consumption (kWh)',
-                data: [totalEnergy],
+                label: 'Total Daily Average Energy Consumption',
+                data: [totalEnergy, totalEnergy, totalEnergy, totalEnergy], // Repeat to create a line
                backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1,
@@ -1285,6 +1651,7 @@ function prepareDailyTotalHotelChart(data, selectedDate) {
 
 
 function prepareHourlyHotelChart(data) {
+    
     // Sort data by time
     const sortedData = [...data].sort((a, b) => {
         const timeToMinutes = (timeStr) => {
@@ -1299,11 +1666,12 @@ function prepareHourlyHotelChart(data) {
     const labels = sortedData.map(item => item.time);
     const energyValues = sortedData.map(item => item.energy_distributtion);
     
+    const selectedDate = document.getElementById('dateFilter').value;
     return {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Energy Consumption (kWh)',
+                label: `Energy Consumption `,
                 data: energyValues,
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
@@ -1312,9 +1680,19 @@ function prepareHourlyHotelChart(data) {
               //  fill: true
             }]
         },
-        options: defaultChartOptions('Hourly Energy Consumption ')
+        options: defaultChartOptions(`Hourly Energy Consumption for ${selectedDate}`)
     };
 }
+
+function prepareAverageHotelChart(data) {
+    // If single date selected, show total energy for that date
+    const selectedDate = document.getElementById('dateFilter').value;
+    if (selectedDate !== 'all') {
+        return prepareDailyTotalHotelChart(data, selectedDate);
+    }
+}
+
+
 function prepareHourlyZemChart(data) {
     // Sort data by time
     const sortedData = [...data].sort((a, b) => {
@@ -1346,6 +1724,10 @@ function prepareHourlyZemChart(data) {
         options: defaultChartOptions('Hourly Energy Consumption ')
     };
 }
+
+
+
+
 function prepareZemChartData(filteredData) {
     if (filteredData.length === 0) {
         return {
@@ -1773,10 +2155,10 @@ function prepareAverageFietenChart(data) {
          type: 'bar',
         data: {
             // or 'line' depending on your preference
-            labels: ["A","B","C","D"], // Single label
+            labels: [selectedDate,selectedDate], // Single label
             datasets: [{
                 label: ` Average Capacity for ${selectedDate} (MW)`,
-                data: [averageCapacity,averageCapacity,averageCapacity,averageCapacity], // Single data point
+                data: [averageCapacity,averageCapacity], // Single data point
                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1,
@@ -1808,11 +2190,13 @@ function defaultChartOptions(title) {
             },
             x: {
                 title: {
+                     maxBarThickness: 20, 
                     display: true,
                     text: 'Time Period',
                     type: 'category',
-                    maxTicksLimit: false,  // Show all labels
-                      autoSkip: false  
+                    //maxTicksLimit: false,  // Show all labels
+                      autoSkip: false ,
+                       
                             // Don't skip any labels
                 }
             }
@@ -1824,7 +2208,10 @@ function defaultChartOptions(title) {
             },
             legend: {
                 display: true
-            }
+            },
+            //  tooltip: {
+            //     enabled: false  // This disables the tooltip
+            // }
         }
     };
 }
